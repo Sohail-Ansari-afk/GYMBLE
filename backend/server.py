@@ -15,6 +15,20 @@ ALLOWED_ORIGINS = [
 if os.environ.get('FRONTEND_URL'):
     ALLOWED_ORIGINS.append(os.environ.get('FRONTEND_URL'))
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["*"],
+)
+
+# Health check root endpoint
+def get_health():
+    return {"status": "ok", "message": "Welcome to the Gymble backend API!"}
+
+app.add_api_route("/", get_health, methods=["GET"])  # root route
+
 
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
@@ -2019,25 +2033,6 @@ async def get_member_diet_progress(member_id: str, current_user: User = Depends(
 # Include the router in the main app
 app.include_router(api_router)
 
-# CORS Configuration - More secure setup
-ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # React development server
-    "http://127.0.0.1:3000",  # React development server alternative
-    "https://3e760d43-d9ca-4437-987a-1318bb7e632c.preview.emergentagent.com",  # Current Frontend URL
-    "https://2774af71-268d-4b92-b718-31567f0daf4d.preview.emergentagent.com",  # Previous Frontend URL
-]
-
-# Add environment variable for production origins
-if os.environ.get('FRONTEND_URL'):
-    ALLOWED_ORIGINS.append(os.environ.get('FRONTEND_URL'))
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
-)
 
 # Configure logging
 logging.basicConfig(
