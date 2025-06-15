@@ -15,6 +15,9 @@ ALLOWED_ORIGINS = [
 if os.environ.get('FRONTEND_URL'):
     ALLOWED_ORIGINS.append(os.environ.get('FRONTEND_URL'))
 
+# Create the main app without a prefix
+app = FastAPI()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
