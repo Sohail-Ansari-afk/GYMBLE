@@ -4,6 +4,7 @@ from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
+import os
 
 # --- CORS configuration for frontend ---
 ALLOWED_ORIGINS = [
