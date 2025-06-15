@@ -128,6 +128,52 @@ class Gymble2APITester:
                 if basic_plan:
                     self.plan_id = basic_plan['id']
                     print(f"   📋 Found existing Basic Plan: {basic_plan['id']}")
+                    
+                    # Create owner credentials for existing gym
+                    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+                    owner_data = {
+                        "email": f"owner_{timestamp}@testgym.com",
+                        "password": "Password123",
+                        "name": "Test Gym Owner",
+                        "phone": "+919876543210",
+                        "role": "owner"
+                    }
+                    
+                    success, response = self.run_api_call("POST", "auth/register", 200, owner_data)
+                    if success:
+                        self.owner_token = response['access_token']
+                        self.owner_credentials = {"email": owner_data['email'], "password": owner_data['password']}
+                        print(f"   🔑 Registered new owner: {owner_data['email']}")
+                        
+                        # Create gym for this owner
+                        gym_data = {
+                            "name": f"Test Gym {timestamp}",
+                            "address": "123 Test Street, Test City",
+                            "phone": "+919876543210",
+                            "email": f"gym_{timestamp}@testgym.com",
+                            "description": "A test gym for API validation"
+                        }
+                        
+                        success, response = self.run_api_call("POST", "gyms", 200, gym_data, token=self.owner_token)
+                        if success:
+                            print(f"   🏢 Created new gym: {response['id']}")
+                            self.gym_id = response['id']
+                            
+                            # Create plan for this gym
+                            plan_data = {
+                                "name": "Basic Plan",
+                                "description": "A basic membership plan for testing",
+                                "price": 1000.0,
+                                "duration_days": 30,
+                                "plan_type": "basic",
+                                "features": ["Access to gym equipment", "Locker access", "Basic support"]
+                            }
+                            
+                            success, response = self.run_api_call("POST", "plans", 200, plan_data, token=self.owner_token)
+                            if success:
+                                print(f"   📋 Created new plan: {response['id']}")
+                                self.plan_id = response['id']
+                    
                     return True
         
         # Need to create gym and plan - register owner first
