@@ -9,7 +9,11 @@ from starlette.middleware.cors import CORSMiddleware
 ALLOWED_ORIGINS = [
     "https://gymble0.netlify.app",  # Netlify deployed frontend
     "http://localhost:3000",       # Local React dev server
+    "http://127.0.0.1:3000",       # Localhost alternative
 ]
+if os.environ.get('FRONTEND_URL'):
+    ALLOWED_ORIGINS.append(os.environ.get('FRONTEND_URL'))
+
 
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
@@ -53,9 +57,10 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
 )
+
 
 # JWT Configuration
 SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'fallback-secret-key-for-development-only')
