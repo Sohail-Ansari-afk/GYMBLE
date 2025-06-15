@@ -261,6 +261,27 @@ class Gymble2APITester:
                 success, response = self.run_api_call("POST", "auth/login", 200, self.owner_credentials)
                 if success:
                     self.owner_token = response['access_token']
+                    print(f"   🔑 Successfully logged in as owner: {self.owner_credentials['email']}")
+                else:
+                    print(f"   ❌ Failed to login as owner: {response.get('error')}")
+            else:
+                # Create a new owner account if credentials aren't available
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+                owner_data = {
+                    "email": f"owner_{timestamp}@testgym.com",
+                    "password": "Password123",
+                    "name": "Test Gym Owner",
+                    "phone": "+919876543210",
+                    "role": "owner"
+                }
+                
+                success, response = self.run_api_call("POST", "auth/register", 200, owner_data)
+                if success:
+                    self.owner_token = response['access_token']
+                    self.owner_credentials = {"email": owner_data['email'], "password": owner_data['password']}
+                    print(f"   🔑 Created new owner account: {owner_data['email']}")
+                else:
+                    print(f"   ❌ Failed to create owner account: {response.get('error')}")
         
         if not self.owner_token:
             self.log_test("Owner Authentication", False, "No owner token available")
