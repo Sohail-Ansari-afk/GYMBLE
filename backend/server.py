@@ -1,9 +1,20 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
+
+
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
+
+# --- CORS configuration for frontend ---
+ALLOWED_ORIGINS = [
+    "https://gymble0.netlify.app",  # Netlify deployed frontend
+    "http://localhost:3000",       # Local React dev server
+]
+
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
+
+
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr, validator
@@ -36,6 +47,15 @@ app = FastAPI()
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
+
+# Add CORS middleware with Netlify URL
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # JWT Configuration
 SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'fallback-secret-key-for-development-only')
