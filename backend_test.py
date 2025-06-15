@@ -255,6 +255,7 @@ class Gymble2APITester:
                      else f"Unexpected result: {response.get('error')}")
         
         # Now test that owner CAN generate QR codes
+        # We'll use the owner from the gym setup phase
         if not self.owner_token:
             # Need to login as owner
             if self.owner_credentials:
@@ -265,27 +266,32 @@ class Gymble2APITester:
                 else:
                     print(f"   ❌ Failed to login as owner: {response.get('error')}")
             else:
-                # Create a new owner account if credentials aren't available
-                timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-                owner_data = {
-                    "email": f"owner_{timestamp}@testgym.com",
-                    "password": "Password123",
-                    "name": "Test Gym Owner",
-                    "phone": "+919876543210",
-                    "role": "owner"
-                }
-                
-                success, response = self.run_api_call("POST", "auth/register", 200, owner_data)
-                if success:
-                    self.owner_token = response['access_token']
-                    self.owner_credentials = {"email": owner_data['email'], "password": owner_data['password']}
-                    print(f"   🔑 Created new owner account: {owner_data['email']}")
-                else:
-                    print(f"   ❌ Failed to create owner account: {response.get('error')}")
+                # We should already have an owner from the gym setup phase
+                self.log_test("Owner Authentication", False, "No owner credentials available")
+                return False
         
         if not self.owner_token:
             self.log_test("Owner Authentication", False, "No owner token available")
             return False
+        
+        # Verify owner has gym access
+        success, gym_response = self.run_api_call("GET", "gyms/my", 200, token=self.owner_token)
+        if not success:
+            self.log_test("Owner Gym Access", False, f"Owner has no gym: {gym_response.get('error')}")
+            return False
+        
+        success, response = self.run_api_call("GET", "attendance/qr-code", 200, token=self.owner_token)
+        self.log_test("Owner QR Code Generation", success, 
+                     f"Generated QR with numeric code: {response.get('numeric_code', 'Unknown')}" 
+                     if success else response.get('error'))
+        
+        if success:
+            self.qr_code_data = response.get('qr_code_data')
+            self.numeric_code = response.get('numeric_code')
+            print(f"   🔢 Numeric Code: {self.numeric_code}")
+            print(f"   ⏰ Expires: {response.get('expires_at', 'Unknown')}")
+        
+        return success
         
         success, response = self.run_api_call("GET", "attendance/qr-code", 200, token=self.owner_token)
         self.log_test("Owner QR Code Generation", success, 
