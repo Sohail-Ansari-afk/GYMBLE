@@ -67,7 +67,7 @@ const DietPlans = ({ onNavigate }) => {
 
   const fetchMembers = async () => {
     try {
-      const response = await axios.get(`${API}/members`);
+      const response = await axios.get(`${API}/gym-members`);
       setMembers(response.data.filter(member => member.membership_status === 'active'));
     } catch (error) {
       console.error('Error fetching members:', error);

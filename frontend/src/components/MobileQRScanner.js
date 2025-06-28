@@ -37,21 +37,39 @@ const MobileQRScanner = ({ onNavigate }) => {
     try {
       const token = localStorage.getItem('token');
       const headers = { 'Authorization': `Bearer ${token}` };
+      
+      // Determine the action based on current attendance status
+      const action = attendanceStatus?.status === 'checked_in' ? 'check-out' : 'check-in';
+      
+      // Get member ID from local storage or session
+      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+      const memberId = userData.id || userData.member_id;
+      
+      if (!memberId) {
+        throw new Error('Member ID not found. Please log in again.');
+      }
 
-      const response = await axios.post(`${API}/attendance/mark`, {
-        qr_code_data: qrData,
-        device_info: navigator.userAgent
+      // Use the new attendance scan endpoint
+      const response = await axios.post(`${API}/attendance/scan`, {
+        member_id: memberId,
+        qr_code: qrData,
+        timestamp: new Date().toISOString(),
+        action: action
       }, { headers });
 
       // Refresh attendance status
       await fetchAttendanceStatus();
       
-      // Show success message
-      const isCheckIn = !attendanceStatus?.attendance?.check_out_time;
-      alert(isCheckIn ? 'Successfully checked in! 🎉' : 'Successfully checked out! 👋');
+      // Show success message based on the action performed
+      alert(`Successfully ${action === 'check-in' ? 'checked in! 🎉' : 'checked out! 👋'}`);
       
     } catch (error) {
-      setError(error.response?.data?.detail || 'Failed to mark attendance. Please try again.');
+      // Handle specific error cases
+      if (error.response?.data?.detail?.includes('membership_status')) {
+        setError('Your membership is not active. Please contact the gym staff.');
+      } else {
+        setError(error.response?.data?.detail || error.message || 'Failed to mark attendance. Please try again.');
+      }
     } finally {
       setScanning(false);
     }
@@ -78,21 +96,39 @@ const MobileQRScanner = ({ onNavigate }) => {
     try {
       const token = localStorage.getItem('token');
       const headers = { 'Authorization': `Bearer ${token}` };
+      
+      // Determine the action based on current attendance status
+      const action = attendanceStatus?.status === 'checked_in' ? 'check-out' : 'check-in';
+      
+      // Get member ID from local storage or session
+      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+      const memberId = userData.id || userData.member_id;
+      
+      if (!memberId) {
+        throw new Error('Member ID not found. Please log in again.');
+      }
 
-      const response = await axios.post(`${API}/attendance/mark`, {
-        numeric_code: numericCode,
-        device_info: navigator.userAgent
+      // Use the new attendance scan endpoint
+      const response = await axios.post(`${API}/attendance/scan`, {
+        member_id: memberId,
+        qr_code: numericCode, // Using the numeric code as QR code data
+        timestamp: new Date().toISOString(),
+        action: action
       }, { headers });
 
       // Refresh attendance status
       await fetchAttendanceStatus();
       
-      // Show success message
-      const isCheckIn = !attendanceStatus?.attendance?.check_out_time;
-      alert(isCheckIn ? 'Successfully checked in! 🎉' : 'Successfully checked out! 👋');
+      // Show success message based on the action performed
+      alert(`Successfully ${action === 'check-in' ? 'checked in! 🎉' : 'checked out! 👋'}`);
       
     } catch (error) {
-      setError(error.response?.data?.detail || 'Failed to mark attendance. Please try again.');
+      // Handle specific error cases
+      if (error.response?.data?.detail?.includes('membership_status')) {
+        setError('Your membership is not active. Please contact the gym staff.');
+      } else {
+        setError(error.response?.data?.detail || error.message || 'Failed to mark attendance. Please try again.');
+      }
     } finally {
       setScanning(false);
     }
@@ -121,21 +157,24 @@ const MobileQRScanner = ({ onNavigate }) => {
           icon: '📱',
           title: 'Ready to Check In',
           message: 'Scan the QR code at your gym to mark your attendance',
-          color: 'bg-blue-50 border-blue-200 text-blue-800'
+          color: 'bg-blue-50 border-blue-200 text-blue-800',
+          action: 'check-in'
         };
       case 'checked_in':
         return {
           icon: '✅',
           title: 'You\'re Checked In!',
           message: `Since: ${new Date(attendanceStatus.attendance.check_in_time).toLocaleTimeString()}`,
-          color: 'bg-green-50 border-green-200 text-green-800'
+          color: 'bg-green-50 border-green-200 text-green-800',
+          action: 'check-out'
         };
       case 'checked_out':
         return {
           icon: '👋',
           title: 'Workout Completed',
           message: `Duration: ${attendanceStatus.attendance.duration_minutes} minutes`,
-          color: 'bg-purple-50 border-purple-200 text-purple-800'
+          color: 'bg-purple-50 border-purple-200 text-purple-800',
+          action: 'check-in' // Reset to check-in for next visit
         };
       default:
         return null;
@@ -273,6 +312,16 @@ const MobileQRScanner = ({ onNavigate }) => {
                 <li>• Scan to check-in when arriving</li>
                 <li>• Scan again to check-out when leaving</li>
               </ul>
+              {statusDisplay && (
+                <div className="mt-3 pt-3 border-t border-yellow-200">
+                  <p className="font-medium text-yellow-800">Your next action:</p>
+                  <p className="text-sm text-yellow-700">
+                    {statusDisplay.action === 'check-in' ? 
+                      'Ready to CHECK IN for your workout' : 
+                      'Don\'t forget to CHECK OUT when leaving'}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 

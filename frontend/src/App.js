@@ -15,6 +15,8 @@ import Announcements from './components/Announcements';
 import GymSetupForm from './components/GymSetupForm';
 import MemberDashboard from './components/MemberDashboard';
 import MemberPlanTracker from './components/MemberPlanTracker';
+import PaymentSettings from './components/PaymentSettings';
+import SubscriptionManager from './components/SubscriptionManager';
 
 // Import enhanced member components
 import PublicMemberRegistration from './components/PublicMemberRegistration';
@@ -126,6 +128,10 @@ const AuthenticatedApp = ({ currentView, setCurrentView }) => {
         return <DietPlans onNavigate={setCurrentView} />;
       case 'announcements':
         return <Announcements onNavigate={setCurrentView} />;
+      case 'payment-settings':
+        return <PaymentSettings onNavigate={setCurrentView} />;
+      case 'subscription-manager':
+        return <SubscriptionManager onNavigate={setCurrentView} />;
       default:
         return <Dashboard onNavigate={setCurrentView} />;
     }
@@ -197,7 +203,7 @@ const AuthenticatedApp = ({ currentView, setCurrentView }) => {
           {/* Navigation */}
           <nav className="bg-white border-b px-6 py-2">
             <div className="flex space-x-6">
-              {['dashboard', 'checkin', 'members', 'plans', 'workout-plans', 'diet-plans', 'announcements'].map((view) => (
+              {['dashboard', 'checkin', 'members', 'plans', 'workout-plans', 'diet-plans', 'announcements', 'payment-settings', 'subscription-manager'].map((view) => (
                 <button
                   key={view}
                   onClick={() => setCurrentView(view)}
@@ -209,6 +215,7 @@ const AuthenticatedApp = ({ currentView, setCurrentView }) => {
                 >
                   {view === 'workout-plans' ? 'Workout Plans' : 
                    view === 'diet-plans' ? 'Diet Plans' :
+                   view === 'subscription-manager' ? 'Subscription Manager' :
                    view.charAt(0).toUpperCase() + view.slice(1)}
                 </button>
               ))}

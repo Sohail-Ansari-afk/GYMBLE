@@ -1,0 +1,53 @@
+GYMBLE CORS Diagnostic Tool Log - 2025-06-27 16:01:09
+================================================================================
+
+[SECTION] 
+--- Checking if backend server is running ---
+[INFO] SUCCESS: Backend server is running at http://localhost:8000
+[INFO] INFO: Status code: 200
+[SECTION] 
+--- Testing API endpoints ---
+[INFO] INFO: Testing GET request to http://localhost:8000/api/gyms/all
+[INFO] SUCCESS: Endpoint /gyms/all returned status code 200
+[INFO] INFO: Testing GET request to http://localhost:8000/api/gyms/all with Origin: http://localhost:52914
+[INFO] SUCCESS: Endpoint /gyms/all returned status code 200
+[INFO] SUCCESS: Server allows requests from http://localhost:52914
+[SECTION] 
+--- Testing CORS preflight requests ---
+[INFO] INFO: Testing OPTIONS request to http://localhost:8000/api/gyms/all with Origin: http://localhost:52914
+[INFO] SUCCESS: OPTIONS request succeeded with status code 200
+[INFO] INFO: Access-Control-Allow-Origin: http://localhost:52914
+[INFO] INFO: Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS, PATCH
+[INFO] INFO: Access-Control-Allow-Headers: Content-Type
+[SECTION] 
+--- Analyzing server.py CORS configuration ---
+[INFO] SUCCESS: CORSMiddleware is configured in server.py
+[INFO] INFO: Configured ALLOWED_ORIGINS:
+[INFO] INFO:   
+    "https://gymble0.netlify.app
+[INFO] INFO:   # Netlify deployed frontend
+    "http://localhost:3000
+[INFO] INFO:   # Local React dev server
+    "http://127.0.0.1:3000
+[INFO] SUCCESS:   # Localhost alternative
+    "http://localhost:52914
+[INFO] INFO:   # Flutter web app port
+    "http://127.0.0.1:52914
+[INFO] SUCCESS:   # Flutter web app port alternative
+    "http://localhost:*
+[INFO] SUCCESS:   # Any localhost port
+    "http://127.0.0.1:*
+[INFO] INFO:   # Any 127.0.0.1 port
+    "null"                         # For local file testing
+
+[SECTION] 
+--- Recommendations ---
+[INFO] INFO: 1. Your CORS configuration looks good!
+[INFO] INFO: 
+2. After making changes:
+[INFO] INFO: 
+3. For testing in browser:
+[INFO] INFO: 
+4. Additional resources:
+[HEADER] ======================================== Diagnostic Completed ========================================
+[INFO] INFO: A detailed log has been saved to cors_diagnostic_log.txt

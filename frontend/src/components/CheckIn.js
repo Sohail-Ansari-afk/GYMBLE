@@ -94,11 +94,16 @@ const CheckIn = ({ onNavigate }) => {
   const handleCheckIn = async (memberId) => {
     setLoading(true);
     try {
-      const response = await axios.post(`${API}/attendance/mark-manual`, null, {
-        params: {
-          member_id: memberId,
-          verification_code: qrCodeData?.numeric_code || ''
-        }
+      // Determine if the member is already checked in
+      const memberCheckin = todayCheckins.find(c => c.member_id === memberId && !c.check_out_time);
+      const action = memberCheckin ? 'check-out' : 'check-in';
+      
+      // Use the new attendance scan API
+      const response = await axios.post(`${API}/attendance/scan`, {
+        member_id: memberId,
+        qr_code: qrCodeData?.qr_code_data || qrCodeData?.numeric_code || '',
+        timestamp: new Date().toISOString(),
+        action: action
       });
       
       // Refresh data
@@ -106,9 +111,16 @@ const CheckIn = ({ onNavigate }) => {
       setMembers([]);
       setSearchQuery('');
       
-      alert(`Member ${response.data.action === 'check_in' ? 'checked in' : 'checked out'} successfully!`);
+      // Show success message based on the response
+      const nextAction = response.data.nextAction;
+      alert(`Member ${action === 'check-in' ? 'checked in' : 'checked out'} successfully! Next action: ${nextAction}`);
     } catch (error) {
-      alert(error.response?.data?.detail || 'Failed to mark attendance');
+      // Handle specific error cases
+      if (error.response?.data?.detail?.includes('membership_status')) {
+        alert('This member\'s membership is not active. Please update their membership status before check-in.');
+      } else {
+        alert(error.response?.data?.detail || 'Failed to mark attendance');
+      }
     } finally {
       setLoading(false);
     }
@@ -122,11 +134,16 @@ const CheckIn = ({ onNavigate }) => {
 
     setLoading(true);
     try {
-      const response = await axios.post(`${API}/attendance/mark-manual`, null, {
-        params: {
-          member_id: selectedMember.id,
-          verification_code: manualCode.trim()
-        }
+      // Determine if the member is already checked in
+      const memberCheckin = todayCheckins.find(c => c.member_id === selectedMember.id && !c.check_out_time);
+      const action = memberCheckin ? 'check-out' : 'check-in';
+      
+      // Use the new attendance scan API
+      const response = await axios.post(`${API}/attendance/scan`, {
+        member_id: selectedMember.id,
+        qr_code: manualCode.trim(),
+        timestamp: new Date().toISOString(),
+        action: action
       });
       
       // Refresh data
@@ -135,9 +152,16 @@ const CheckIn = ({ onNavigate }) => {
       setSelectedMember(null);
       setShowManualEntry(false);
       
-      alert(`Member ${response.data.action === 'check_in' ? 'checked in' : 'checked out'} successfully!`);
+      // Show success message based on the response
+      const nextAction = response.data.nextAction;
+      alert(`Member ${action === 'check-in' ? 'checked in' : 'checked out'} successfully! Next action: ${nextAction}`);
     } catch (error) {
-      alert(error.response?.data?.detail || 'Failed to mark attendance');
+      // Handle specific error cases
+      if (error.response?.data?.detail?.includes('membership_status')) {
+        alert('This member\'s membership is not active. Please update their membership status before check-in.');
+      } else {
+        alert(error.response?.data?.detail || 'Failed to mark attendance');
+      }
     } finally {
       setLoading(false);
     }

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GYMBLE CORS Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px 0;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+        .endpoint-input {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <h1>GYMBLE CORS Test</h1>
+    
+    <p>This page tests if the backend API server allows cross-origin requests from a browser.</p>
+    
+    <div>
+        <label for="apiUrl">API Endpoint:</label>
+        <input type="text" id="apiUrl" class="endpoint-input" value="http://localhost:8000/api/gyms/all">
+    </div>
+    
+    <button onclick="testFetch()">Test Fetch API</button>
+    <button onclick="testXhr()">Test XMLHttpRequest</button>
+    <button onclick="testOptions()">Test OPTIONS Request</button>
+    
+    <h2>Results:</h2>
+    <pre id="results">Click a button above to test CORS...</pre>
+    
+    <h2>CORS Explanation:</h2>
+    <p>When a web page makes a request to a different domain (or port), the browser enforces CORS security. The server must include specific headers to allow these cross-origin requests.</p>
+    
+    <h3>Common CORS Issues:</h3>
+    <ul>
+        <li><strong>Missing Access-Control-Allow-Origin header</strong> - The server doesn't allow requests from your origin</li>
+        <li><strong>Preflight failure</strong> - The OPTIONS request fails or doesn't return proper CORS headers</li>
+        <li><strong>Credentials issues</strong> - Problems with cookies or authentication across origins</li>
+    </ul>
+    
+    <script>
+        function displayResult(title, data, isError = false) {
+            const resultsElement = document.getElementById('results');
+            let output = title + '\n';
+            
+            if (typeof data === 'object') {
+                output += JSON.stringify(data, null, 2);
+            } else {
+                output += data;
+            }
+            
+            resultsElement.textContent = output;
+            resultsElement.className = isError ? 'error' : 'success';
+        }
+        
+        async function testFetch() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            try {
+                displayResult('Testing with Fetch API...', 'Sending request to ' + apiUrl);
+                
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const responseHeaders = {};
+                response.headers.forEach((value, name) => {
+                    responseHeaders[name] = value;
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    displayResult('✅ Fetch successful!', {
+                        status: response.status,
+                        headers: responseHeaders,
+                        data: data.slice(0, 2) // Show only first 2 items to avoid clutter
+                    });
+                } else {
+                    displayResult('❌ Fetch failed with status: ' + response.status, {
+                        status: response.status,
+                        statusText: response.statusText,
+                        headers: responseHeaders,
+                        body: await response.text()
+                    }, true);
+                }
+            } catch (error) {
+                displayResult('❌ Fetch error:', error.toString(), true);
+            }
+        }
+        
+        function testXhr() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            displayResult('Testing with XMLHttpRequest...', 'Sending request to ' + apiUrl);
+            
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', apiUrl);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            
+            xhr.onload = function() {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+                        displayResult('✅ XMLHttpRequest successful!', {
+                            status: xhr.status,
+                            headers: xhr.getAllResponseHeaders(),
+                            data: data.slice(0, 2) // Show only first 2 items
+                        });
+                    } catch (e) {
+                        displayResult('❌ Error parsing response:', e.toString(), true);
+                    }
+                } else {
+                    displayResult('❌ XMLHttpRequest failed with status: ' + xhr.status, {
+                        status: xhr.status,
+                        statusText: xhr.statusText,
+                        headers: xhr.getAllResponseHeaders(),
+                        response: xhr.responseText
+                    }, true);
+                }
+            };
+            
+            xhr.onerror = function() {
+                displayResult('❌ XMLHttpRequest network error', 'This is likely a CORS issue. Check the browser console for details.', true);
+            };
+            
+            xhr.send();
+        }
+        
+        function testOptions() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            displayResult('Testing OPTIONS request (CORS preflight)...', 'Sending request to ' + apiUrl);
+            
+            const xhr = new XMLHttpRequest();
+            xhr.open('OPTIONS', apiUrl);
+            xhr.setRequestHeader('Access-Control-Request-Method', 'GET');
+            xhr.setRequestHeader('Access-Control-Request-Headers', 'Content-Type');
+            
+            xhr.onload = function() {
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': xhr.getResponseHeader('Access-Control-Allow-Origin'),
+                    'Access-Control-Allow-Methods': xhr.getResponseHeader('Access-Control-Allow-Methods'),
+                    'Access-Control-Allow-Headers': xhr.getResponseHeader('Access-Control-Allow-Headers'),
+                    'Access-Control-Allow-Credentials': xhr.getResponseHeader('Access-Control-Allow-Credentials')
+                };
+                
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    displayResult('✅ OPTIONS request successful!', {
+                        status: xhr.status,
+                        corsHeaders: corsHeaders,
+                        allHeaders: xhr.getAllResponseHeaders()
+                    });
+                } else {
+                    displayResult('❌ OPTIONS request failed with status: ' + xhr.status, {
+                        status: xhr.status,
+                        statusText: xhr.statusText,
+                        corsHeaders: corsHeaders,
+                        allHeaders: xhr.getAllResponseHeaders()
+                    }, true);
+                }
+            };
+            
+            xhr.onerror = function() {
+                displayResult('❌ OPTIONS request network error', 'This is likely a CORS issue. Check the browser console for details.', true);
+            };
+            
+            xhr.send();
+        }
+    </script>
+</body>
+</html>

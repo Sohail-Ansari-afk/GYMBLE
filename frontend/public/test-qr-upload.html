@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Upload Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #2563eb;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .dropzone {
+            border: 2px dashed #d1d5db;
+            border-radius: 4px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            background-color: #f9fafb;
+            transition: border-color 0.3s;
+        }
+        .dropzone:hover {
+            border-color: #2563eb;
+        }
+        .dropzone p {
+            margin: 0;
+            color: #6b7280;
+        }
+        .preview {
+            margin-top: 20px;
+            display: none;
+        }
+        .preview img {
+            max-width: 200px;
+            max-height: 200px;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+        }
+        .preview-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        button {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #1d4ed8;
+        }
+        .remove-btn {
+            background-color: #ef4444;
+        }
+        .remove-btn:hover {
+            background-color: #dc2626;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        .success {
+            background-color: #ecfdf5;
+            color: #047857;
+            border: 1px solid #a7f3d0;
+        }
+        .error {
+            background-color: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #2563eb;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <h1>QR Code Upload Test</h1>
+    <p>This page allows you to test the QR code upload functionality independently of the main application.</p>
+    
+    <div class="container">
+        <div class="form-group">
+            <label for="upiId">UPI ID:</label>
+            <input type="text" id="upiId" placeholder="e.g., name@upi" />
+            <p id="upiIdError" style="color: #ef4444; display: none;">Please enter a valid UPI ID (e.g., name@upi)</p>
+        </div>
+        
+        <div class="form-group">
+            <label>QR Code:</label>
+            <div id="dropzone" class="dropzone">
+                <p>Drag and drop a QR code image here, or click to select</p>
+                <input type="file" id="fileInput" style="display: none;" accept="image/*" />
+            </div>
+        </div>
+        
+        <div id="preview" class="preview">
+            <div class="preview-container">
+                <img id="previewImage" alt="QR Code Preview" />
+                <button id="removeBtn" class="remove-btn">Remove</button>
+            </div>
+        </div>
+        
+        <button id="submitBtn">Test Upload</button>
+        
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Processing...</p>
+        </div>
+        
+        <div id="successStatus" class="status success">
+            Upload successful! The QR code has been processed.
+        </div>
+        
+        <div id="errorStatus" class="status error">
+            Error: Unable to process the QR code. Please try again.
+        </div>
+    </div>
+    
+    <script>
+        // DOM elements
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        const preview = document.getElementById('preview');
+        const previewImage = document.getElementById('previewImage');
+        const removeBtn = document.getElementById('removeBtn');
+        const submitBtn = document.getElementById('submitBtn');
+        const loading = document.getElementById('loading');
+        const successStatus = document.getElementById('successStatus');
+        const errorStatus = document.getElementById('errorStatus');
+        const upiId = document.getElementById('upiId');
+        const upiIdError = document.getElementById('upiIdError');
+        
+        // Variables
+        let qrCodeFile = null;
+        
+        // Event listeners
+        dropzone.addEventListener('click', () => fileInput.click());
+        
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.style.borderColor = '#2563eb';
+        });
+        
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.style.borderColor = '#d1d5db';
+        });
+        
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.style.borderColor = '#d1d5db';
+            
+            if (e.dataTransfer.files.length) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+        
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length) {
+                handleFile(fileInput.files[0]);
+            }
+        });
+        
+        removeBtn.addEventListener('click', () => {
+            qrCodeFile = null;
+            preview.style.display = 'none';
+            fileInput.value = '';
+        });
+        
+        upiId.addEventListener('input', validateUpiId);
+        
+        submitBtn.addEventListener('click', testUpload);
+        
+        // Functions
+        function handleFile(file) {
+            // Check if file is an image
+            if (!file.type.startsWith('image/')) {
+                showError('Please select an image file');
+                return;
+            }
+            
+            qrCodeFile = file;
+            
+            // Display preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImage.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function validateUpiId() {
+            const value = upiId.value.trim();
+            const isValid = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9]+$/i.test(value);
+            
+            if (!isValid && value !== '') {
+                upiIdError.style.display = 'block';
+                return false;
+            } else {
+                upiIdError.style.display = 'none';
+                return true;
+            }
+        }
+        
+        function testUpload() {
+            // Reset status
+            hideStatus();
+            
+            // Validate UPI ID
+            if (!validateUpiId()) {
+                return;
+            }
+            
+            // Check if QR code is provided
+            if (!qrCodeFile) {
+                showError('Please upload a QR code image');
+                return;
+            }
+            
+            // Show loading
+            loading.style.display = 'block';
+            
+            // Simulate API call
+            setTimeout(() => {
+                loading.style.display = 'none';
+                showSuccess();
+                
+                // Log data that would be sent to API
+                console.log('Data to be sent to API:', {
+                    upiId: upiId.value,
+                    qrCodeFileName: qrCodeFile.name,
+                    qrCodeFileSize: qrCodeFile.size,
+                    qrCodeFileType: qrCodeFile.type
+                });
+            }, 1500);
+        }
+        
+        function showError(message) {
+            errorStatus.textContent = `Error: ${message}`;
+            errorStatus.style.display = 'block';
+            successStatus.style.display = 'none';
+        }
+        
+        function showSuccess() {
+            successStatus.style.display = 'block';
+            errorStatus.style.display = 'none';
+        }
+        
+        function hideStatus() {
+            successStatus.style.display = 'none';
+            errorStatus.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
