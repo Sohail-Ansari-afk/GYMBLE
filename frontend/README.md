@@ -1,8 +1,20 @@
-# Getting Started with Create React App
+# GYMBLE Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app) and uses [react-app-rewired](https://github.com/timarney/react-app-rewired) for configuration overrides.
 
 ## Available Scripts
+
+### Dependencies
+
+Before running the application, make sure to install all dependencies:
+
+```
+npm install
+```
+
+The project uses `react-app-rewired` which is already included in the package.json. This allows for customization of the webpack configuration without ejecting from Create React App. The configuration overrides are defined in `config-overrides.js`.
+
+### Available Commands
 
 In the project directory, you can run:
 
